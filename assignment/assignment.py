@@ -64,27 +64,11 @@ def site_sample(sequence_model: SequenceModel,
         # (background) sequence. Hint: use numpy.random.choice
 
         # YOUR CODE HERE
-        # <snip>
-        is_bound = np.random.choice([True, False],
-                                    p=[sequence_model.site_prior,
-                                       sequence_model.background_prior])
-        # </snip>
 
         # Generate a sequence based on whether it's bound or not. Remember that
         # we are using integers to represent the bases with the following
         # mapping: 0 = A, 1 = C, 2 = G, 3 = T
         
         # YOUR CODE HERE "sequence_model.motif_length()" will be useful
-        # <snip>
-        for site_index in range(sequence_model.motif_length()):
-            # Hint: use numpy.random.choice again to choose a base
-            base = np.random.choice(range(4),
-                                    p=sequence_model.site_base_probs[site_index]
-                                    if is_bound
-                                    else sequence_model.background_base_probs)
-            # add the base to the sample array. The first index is the
-            # draw (row) and the second index is the site position (column)
-            sample[draw_index, site_index] = base
-        # </snip>
  
     return sample
