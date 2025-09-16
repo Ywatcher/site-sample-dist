@@ -6,6 +6,34 @@ from cse587Autils.SequenceObjects.SequenceModel import SequenceModel
 
 logger = logging.getLogger(__name__)
 
+class SamplingSequenceModel(SequenceModel):
+    def sample_motif(self):
+        vectorized_choice = np.vectorize(
+            # 4 base 
+            pyfunc=lambda prob_base_i: np.random.choice(4, size=1, p=prob_base_i),
+            signature="(m) -> ()"
+        )
+        return vectorized_choice(self.site_base_probs)
+
+    def sample_background(self):
+        # print("size",self.motif_length, "p",self.background_base_probs)
+        return np.random.choice(
+            4, # # mapping: 0 = A, 1 = C, 2 = G, 3 = T
+            size= self.motif_length(),
+            replace=True, 
+            p=self.background_base_probs 
+        )
+    
+    @classmethod
+    def from_parent(cls, obj:SequenceModel):
+        return cls(
+            obj.site_prior, obj.site_base_probs, obj.background_base_probs,
+            obj._precision, obj._tolerance
+        )
+
+
+
+
 
 def site_sample(sequence_model: SequenceModel,
                 num_draws: int,
@@ -55,20 +83,36 @@ def site_sample(sequence_model: SequenceModel,
         np.random.seed(seed)
 
     # Initialize a numpy array to store the randomly generated sequences
-    sample = np.zeros((num_draws, sequence_model.motif_length()), dtype=int)
-
-    # Loop through num_draws to generate that many sequences
-    for draw_index in range(num_draws):
-
-        # Decide whether this draw will be a bound (motif) or an unbound 
+    # sample = np.zeros((num_draws, sequence_model.motif_length()), dtype=int)
+    # Decide whether this draw will be a bound (motif) or an unbound 
         # (background) sequence. Hint: use numpy.random.choice
+    draw_types = np.random.choice(
+        2,
+        size=num_draws,
+        replace=True,
+        p=[sequence_model.background_prior, sequence_model.site_prior]
+    ).astype(bool)
+    # Loop through num_draws to generate that many sequences
+    sequence_model = SamplingSequenceModel.from_parent(sequence_model)
 
-        # YOUR CODE HERE
+
+    def draw(draw_type:bool) -> NDArray[np.integer]:
+        """
+        draw_type: 0 if from background, 1 if from motif
+        """
+        return (
+            sequence_model.sample_motif() 
+            if draw_type else sequence_model.sample_background()   
+            )
+    sample = np.array(tuple(map(draw, draw_types)))
+
+    # for draw_index in range(num_draws):
+
+                # YOUR CODE HERE
 
         # Generate a sequence based on whether it's bound or not. Remember that
         # we are using integers to represent the bases with the following
-        # mapping: 0 = A, 1 = C, 2 = G, 3 = T
-        
+                
         # YOUR CODE HERE "sequence_model.motif_length()" will be useful
  
     return sample
